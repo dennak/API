@@ -1,1 +1,1 @@
-web: gunicorn encrypted_api:app
+web: gunicorn app:app
