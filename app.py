@@ -6,6 +6,10 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 import base64
 import os
+import time
+
+
+
 
 # Define a base directory to store files
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -28,18 +32,14 @@ def key_from_password(password: str, salt: bytes) -> bytes:
     key = base64.urlsafe_b64encode(kdf.derive(password_bytes))
     return key
 
-def encrypt_file(file_path: str, key: bytes) -> bytes:
-    """Encrypt a file using a key."""
-    with open(file_path, 'rb') as file:
-        file_data = file.read()
-    fernet = Fernet(key)
-    encrypted_data = fernet.encrypt(file_data)
-    return encrypted_data
-
 @app.route('/encrypt', methods=['POST'])
 def encrypt_image():
     try:
+        current_time_seconds = time.time()
+        current_time_milliseconds = int(current_time_seconds)
         file = request.files['file']
+        f_ = os.path.basename(file)
+        f_name = f_.split('.')[0]
         password = request.form['password']
         salt = os.urandom(16)
         key = key_from_password(password, salt)
@@ -48,7 +48,7 @@ def encrypt_image():
         encrypted_data = fernet.encrypt(original_data)
         with open(ENCRYPTED_FILE_PATH, 'wb') as enc_file:
             enc_file.write(salt + encrypted_data)  # Store salt with encrypted data
-        return send_file(ENCRYPTED_FILE_PATH, as_attachment=True, download_name='encrypted_image.enc')
+        return send_file(ENCRYPTED_FILE_PATH, as_attachment=True, download_name=f'{f_name}_{current_time_milliseconds}.enc')
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -58,6 +58,7 @@ def decrypt_image():
         file = request.files['file']
         password = request.form['password']
         file_content = file.read()
+        f_name = os.path.basename(file)
         salt = file_content[:16]
         encrypted_data = file_content[16:]
         key = key_from_password(password, salt)
@@ -65,7 +66,7 @@ def decrypt_image():
         decrypted_data = fernet.decrypt(encrypted_data)
         with open(DECRYPTED_FILE_PATH, 'wb') as file:
             file.write(decrypted_data)
-        return send_file(DECRYPTED_FILE_PATH, as_attachment=True, download_name='decrypted_image.jpg')
+        return send_file(DECRYPTED_FILE_PATH, as_attachment=True, download_name=f_name)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

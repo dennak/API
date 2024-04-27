@@ -1,42 +1,51 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import filedialog
 import requests
-import threading
+import os
 
-def post_data(payload):
-    """Function to post data to the API and fetch the response."""
-    response = requests.post('http://127.0.0.1:5000/encrypt', data=payload)
-    if response.status_code == 201:
-        data = response.json()
-        update_gui(f"Posted Successfully: {data}")
-    else:
-        update_gui("Failed to post data")
 
-def update_gui(message):
-    """Updates the GUI with information or data."""
-    label.config(text=message)
 
-def on_button_click():
-    """Handler for button click that initiates data posting."""
-    user_input = entry.get()
-    payload = {'title': user_input, 'body': 'bar', 'userId': 1}
-    threading.Thread(target=post_data, args=(payload,)).start()
+enc_url = 'https://warm-garden-31732-ca8bf0395088.herokuapp.com/encrypt'
+dec_url = 'https://warm-garden-31732-ca8bf0395088.herokuapp.com/decrypt'
 
-# Create the main window
-root = tk.Tk()
-root.title("API Post Example")
+def upload_encrypt():
+    file_path = filedialog.askopenfilename(filetypes=[('.jpg', '.png')])
+    if file_path:
+        files = {'file': open(file_path, 'rb')}
+        password = {'password': 'your_password'}  # You should manage passwords more securely
+        response = requests.post(enc_url, files=files, data=password)
+        if response.ok:
+            # Assuming you want to save the encrypted file
+            with open('encrypted_image.enc', 'wb') as f:
+                f.write(response.content)
+            result_label.config(text="Encryption successful, file saved as 'encrypted_image.enc'")
+        else:
+            result_label.config(text="Encryption failed: " + response.text)
 
-# Add a text entry widget
-entry = ttk.Entry(root, width=50)
-entry.pack(pady=20)
+def upload_decrypt():
+    file_path = filedialog.askopenfilename(filetypes=[('.enc',)])
+    if file_path:
+        files = {'file': open(file_path, 'rb')}
+        password = {'password': 'your_password'}  # You should manage passwords more securely
+        response = requests.post(dec_url, files=files, data=password)
+        if response.ok:
+            # Assuming you want to save the decrypted file
+            with open('decrypted_image.jpg', 'wb') as f:
+                f.write(response.content)
+            result_label.config(text="Decryption successful, file saved as 'decrypted_image.jpg'")
+        else:
+            result_label.config(text="Decryption failed: " + response.text)
 
-# Add a label to display data or status
-label = ttk.Label(root, text="Enter title and click the button to post data...")
-label.pack(pady=10)
+app = tk.Tk()
+app.title('Encrypt/Decrypt API Client')
 
-# Add a button to send data
-button = ttk.Button(root, text="Post Data", command=on_button_click)
-button.pack(pady=10)
+upload_encrypt_button = tk.Button(app, text="Upload and Encrypt File", command=upload_encrypt)
+upload_encrypt_button.pack(pady=10)
 
-# Start the Tkinter event loop
-root.mainloop()
+upload_decrypt_button = tk.Button(app, text="Upload and Decrypt File", command=upload_decrypt)
+upload_decrypt_button.pack(pady=10)
+
+result_label = tk.Label(app, text="")
+result_label.pack(pady=10)
+
+app.mainloop()
