@@ -3,7 +3,14 @@ from tkinter import filedialog
 import requests
 import os
 
+'''
+current_time_seconds = time.time()
+        current_time_milliseconds = int(current_time_seconds)
 
+        f_ = os.path.basename(file)
+        f_name = f_.split('.')[0]
+        print(f_name)
+'''
 
 enc_url = 'https://warm-garden-31732-ca8bf0395088.herokuapp.com/encrypt'
 dec_url = 'https://warm-garden-31732-ca8bf0395088.herokuapp.com/decrypt'
